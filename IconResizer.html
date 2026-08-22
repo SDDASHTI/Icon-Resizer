@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icon Resizer Pro | Liquid Glass iOS Edition</title>
+    <!-- JSZip for Client-side Zip creation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.12);
+            --glass-border: rgba(255, 255, 255, 0.25);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --accent-color: #007aff;
+            --accent-glow: rgba(0, 122, 255, 0.4);
+            --text-main: #ffffff;
+            --text-sub: rgba(255, 255, 255, 0.7);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at 10% 20%, rgb(30, 20, 60) 0%, rgb(15, 10, 30) 90%);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Ambient Liquid Glows */
+        .glow-1, .glow-2 {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(90px);
+            z-index: 0;
+            pointer-events: none;
+        }
+        .glow-1 {
+            width: 350px;
+            height: 350px;
+            background: #ff2d55;
+            top: 10%;
+            left: 15%;
+            opacity: 0.5;
+            animation: float 12s infinite alternate ease-in-out;
+        }
+        .glow-2 {
+            width: 400px;
+            height: 400px;
+            background: #5856d6;
+            bottom: 10%;
+            right: 15%;
+            opacity: 0.6;
+            animation: float 16s infinite alternate ease-in-out;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(50px, 40px) scale(1.1); }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            padding: 32px;
+            box-shadow: var(--glass-shadow);
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            position: relative;
+        }
+
+        /* Top Bar Settings Header */
+        .top-bar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .lang-select {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 12px;
+            outline: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+        }
+
+        .lang-select:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .lang-select option {
+            background: #1e143c;
+            color: #fff;
+        }
+
+        header {
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 0%, #a1c4fd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            color: var(--text-sub);
+            font-size: 0.95rem;
+        }
+
+        /* Drag and Drop Zone */
+        .drop-zone {
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--accent-color);
+            background: rgba(0, 122, 255, 0.1);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .drop-zone input {
+            display: none;
+        }
+
+        .preview-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .icon-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 18px;
+            object-fit: cover;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            display: none;
+        }
+
+        /* Platform Selection Grid */
+        .platforms-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #fff;
+        }
+
+        .platform-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+        }
+
+        .platform-card {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .platform-card:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .platform-card input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-color);
+            cursor: pointer;
+        }
+
+        .platform-info span {
+            display: block;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .platform-info small {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+        }
+
+        /* Action Button */
+        .btn-generate {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #007aff 0%, #00c6ff 100%);
+            color: white;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 20px var(--accent-glow);
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(0, 122, 255, 0.6);
+        }
+
+        .btn-generate:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Status & Progress */
+        .status-msg {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #a1c4fd;
+            min-height: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            header h1 {
+                font-size: 1.6rem;
+            }
+            .platform-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="glow-1"></div>
+    <div class="glow-2"></div>
+
+    <div class="container">
+        <!-- Top Bar for Settings -->
+        <div class="top-bar">
+            <select id="langSelect" class="lang-select">
+                <option value="en" selected>🌐 English</option>
+                <option value="fa">🌐 فارسی</option>
+            </select>
+        </div>
+
+        <header>
+            <h1 id="txtTitle">Icon Resizer Pro</h1>
+            <p id="txtSubTitle">Smart icon generator for all platform standards with organized ZIP output</p>
+        </header>
+
+        <!-- Drop Zone -->
+        <div class="drop-zone" id="dropZone">
+            <input type="file" id="fileInput" accept="image/png, image/jpeg, image/svg+xml, image/webp">
+            <div class="preview-container">
+                <img id="imagePreview" class="icon-preview" alt="Icon Preview">
+                <div id="dropText">
+                    <p id="txtDropTitle" style="font-weight: 600; font-size: 1.1rem; margin-bottom: 6px;">Drag & drop your icon here, or click to browse</p>
+                    <p id="txtDropDesc" style="font-size: 0.85rem; color: var(--text-sub);">Recommended: 1024x1024 PNG or SVG square image</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Platforms Grid -->
+        <div>
+            <div id="txtPlatformsTitle" class="platforms-title">Select Target Platforms:</div>
+            <div class="platform-grid">
+                <label class="platform-card">
+                    <input type="checkbox" id="chkFlutter" checked>
+                    <div class="platform-info">
+                        <span>Flutter</span>
+                        <small id="subFlutter">Android + iOS + Web structure</small>
+                    </div>
+                </label>
+
+                <label class="platform-card">
+                    <input type="checkbox" id="chkAndroid" checked>
+                    <div class="platform-info">
+                        <span>Android Native</span>
+                        <small id="subAndroid">mipmap-hdpi/xhdpi/xxhdpi + PlayStore</small>
+                    </div>
+                </label>
+
+                <label class="platform-card">
+                    <input type="checkbox" id="chkIOS" checked>
+                    <div class="platform-info">
+                        <span>iOS / Xcode</span>
+                        <small id="subIOS">AppIcon.appiconset + Contents.json</small>
+                    </div>
+                </label>
+
+                <label class="platform-card">
+                    <input type="checkbox" id="chkWeb" checked>
+                    <div class="platform-info">
+                        <span>Web & PWA</span>
+                        <small id="subWeb">Favicons + Apple Touch + Manifest</small>
+                    </div>
+                </label>
+
+                <label class="platform-card">
+                    <input type="checkbox" id="chkDesktop">
+                    <div class="platform-info">
+                        <span>macOS & Windows</span>
+                        <small id="subDesktop">Standard sizes 16x16 to 1024x1024</small>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <!-- Button & Status -->
+        <button class="btn-generate" id="btnGenerate" disabled>
+            <span id="txtBtnGenerate">Generate & Download ZIP</span>
+        </button>
+        <div class="status-msg" id="statusMsg"></div>
+    </div>
+
+    <!-- Hidden Canvas for Image Processing -->
+    <canvas id="canvas" style="display: none;"></canvas>
+
+    <script>
+        // --- Translations System ---
+        const translations = {
+            en: {
+                dir: 'ltr',
+                title: 'Icon Resizer',
+                subTitle: 'Smart icon generator for all platform standards with organized ZIP output',
+                dropTitle: 'Drag & drop your icon here, or click to browse',
+                dropDesc: 'Recommended: 1024x1024 PNG or SVG square image',
+                platformsTitle: 'Select Target Platforms:',
+                subFlutter: 'Android + iOS + Web structure',
+                subAndroid: 'mipmap-hdpi/xhdpi/xxhdpi + PlayStore',
+                subIOS: 'AppIcon.appiconset + Contents.json',
+                subWeb: 'Favicons + Apple Touch + Manifest',
+                subDesktop: 'Standard sizes 16x16 to 1024x1024',
+                btnGenerate: 'Generate & Download ZIP',
+                invalidImage: 'Please select a valid image file.',
+                imageReady: (w, h) => `Image ready (${w}x${h} px)`,
+                processing: 'Resizing and generating icons...',
+                zipping: 'Compressing into ZIP file...',
+                success: 'Icons generated and downloaded successfully!',
+                error: 'An error occurred during processing.'
+            },
+            fa: {
+                dir: 'rtl',
+                title: 'Icon Resizer',
+                subTitle: 'مبدل هوشمند آیکن به تمام ابعاد استاندارد با فرمت ساختاریافته ZIP',
+                dropTitle: 'تصویر آیکن را اینجا بکشید یا کلیک کنید',
+                dropDesc: 'ترجیحاً تصویر PNG یا SVG مربع با کیفیت 1024x1024',
+                platformsTitle: 'انتخاب پلتفرم‌های مقصد:',
+                subFlutter: 'ساختار Android + iOS + Web',
+                subAndroid: 'mipmap-hdpi/xhdpi/xxhdpi + PlayStore',
+                subIOS: 'AppIcon.appiconset + Contents.json',
+                subWeb: 'Favicons + Apple Touch + Manifest',
+                subDesktop: 'ابعاد استاندارد 16x16 تا 1024x1024',
+                btnGenerate: 'ساخت و دانلود خروجی ZIP',
+                invalidImage: 'لطفاً یک فایل تصویری معتبر انتخاب کنید.',
+                imageReady: (w, h) => `تصویر آماده است (${w}x${h} پیکسل)`,
+                processing: 'در حال ساخت و ریسایز آیکن‌ها...',
+                zipping: 'در حال فشرده‌سازی فایل ZIP...',
+                success: 'خروجی با موفقیت ساخته و دانلود شد!',
+                error: 'خطایی در پردازش رخ داد.'
+            }
+        };
+
+        let currentLang = 'en';
+
+        // --- Specifications & Platform Configs ---
+        const ANDROID_SIZES = [
+            { folder: 'mipmap-mdpi', name: 'ic_launcher.png', size: 48 },
+            { folder: 'mipmap-hdpi', name: 'ic_launcher.png', size: 72 },
+            { folder: 'mipmap-xhdpi', name: 'ic_launcher.png', size: 96 },
+            { folder: 'mipmap-xxhdpi', name: 'ic_launcher.png', size: 144 },
+            { folder: 'mipmap-xxxhdpi', name: 'ic_launcher.png', size: 192 },
+            { folder: 'playstore', name: 'playstore-icon.png', size: 512 }
+        ];
+
+        const IOS_SIZES = [
+            { size: 20, scale: 2, idiom: 'iphone', filename: 'Icon-App-20x20@2x.png' },
+            { size: 20, scale: 3, idiom: 'iphone', filename: 'Icon-App-20x20@3x.png' },
+            { size: 29, scale: 2, idiom: 'iphone', filename: 'Icon-App-29x29@2x.png' },
+            { size: 29, scale: 3, idiom: 'iphone', filename: 'Icon-App-29x29@3x.png' },
+            { size: 40, scale: 2, idiom: 'iphone', filename: 'Icon-App-40x40@2x.png' },
+            { size: 40, scale: 3, idiom: 'iphone', filename: 'Icon-App-40x40@3x.png' },
+            { size: 60, scale: 2, idiom: 'iphone', filename: 'Icon-App-60x60@2x.png' },
+            { size: 60, scale: 3, idiom: 'iphone', filename: 'Icon-App-60x60@3x.png' },
+            { size: 20, scale: 1, idiom: 'ipad', filename: 'Icon-App-20x20@1x.png' },
+            { size: 20, scale: 2, idiom: 'ipad', filename: 'Icon-App-20x20@2x-ipad.png' },
+            { size: 29, scale: 1, idiom: 'ipad', filename: 'Icon-App-29x29@1x.png' },
+            { size: 29, scale: 2, idiom: 'ipad', filename: 'Icon-App-29x29@2x-ipad.png' },
+            { size: 40, scale: 1, idiom: 'ipad', filename: 'Icon-App-40x40@1x.png' },
+            { size: 40, scale: 2, idiom: 'ipad', filename: 'Icon-App-40x40@2x-ipad.png' },
+            { size: 76, scale: 1, idiom: 'ipad', filename: 'Icon-App-76x76@1x.png' },
+            { size: 76, scale: 2, idiom: 'ipad', filename: 'Icon-App-76x76@2x.png' },
+            { size: 83.5, scale: 2, idiom: 'ipad', filename: 'Icon-App-83.5x83.5@2x.png' },
+            { size: 1024, scale: 1, idiom: 'ios-marketing', filename: 'Icon-App-1024x1024@1x.png' }
+        ];
+
+        const WEB_SIZES = [
+            { name: 'favicon-16x16.png', size: 16 },
+            { name: 'favicon-32x32.png', size: 32 },
+            { name: 'apple-touch-icon.png', size: 180 },
+            { name: 'android-chrome-192x192.png', size: 192 },
+            { name: 'android-chrome-512x512.png', size: 512 }
+        ];
+
+        const DESKTOP_SIZES = [
+            { name: 'icon-16.png', size: 16 },
+            { name: 'icon-32.png', size: 32 },
+            { name: 'icon-64.png', size: 64 },
+            { name: 'icon-128.png', size: 128 },
+            { name: 'icon-256.png', size: 256 },
+            { name: 'icon-512.png', size: 512 },
+            { name: 'icon-1024.png', size: 1024 }
+        ];
+
+        // --- UI Element References ---
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const dropText = document.getElementById('dropText');
+        const btnGenerate = document.getElementById('btnGenerate');
+        const statusMsg = document.getElementById('statusMsg');
+        const langSelect = document.getElementById('langSelect');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let loadedImage = null;
+
+        // --- Switch Language Function ---
+        function setLanguage(lang) {
+            currentLang = lang;
+            const t = translations[lang];
+
+            document.documentElement.lang = lang;
+            document.documentElement.dir = t.dir;
+
+            document.getElementById('txtTitle').innerText = t.title;
+            document.getElementById('txtSubTitle').innerText = t.subTitle;
+            document.getElementById('txtDropTitle').innerText = t.dropTitle;
+            document.getElementById('txtDropDesc').innerText = t.dropDesc;
+            document.getElementById('txtPlatformsTitle').innerText = t.platformsTitle;
+            document.getElementById('subFlutter').innerText = t.subFlutter;
+            document.getElementById('subAndroid').innerText = t.subAndroid;
+            document.getElementById('subIOS').innerText = t.subIOS;
+            document.getElementById('subWeb').innerText = t.subWeb;
+            document.getElementById('subDesktop').innerText = t.subDesktop;
+            document.getElementById('txtBtnGenerate').innerText = t.btnGenerate;
+
+            if (loadedImage) {
+                statusMsg.innerText = t.imageReady(loadedImage.width, loadedImage.height);
+            }
+        }
+
+        langSelect.addEventListener('change', (e) => {
+            setLanguage(e.target.value);
+        });
+
+        // --- File Upload & Drag Event Listeners ---
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                alert(translations[currentLang].invalidImage);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    loadedImage = img;
+                    imagePreview.src = event.target.result;
+                    imagePreview.style.display = 'block';
+                    dropText.style.display = 'none';
+                    btnGenerate.disabled = false;
+                    statusMsg.innerText = translations[currentLang].imageReady(img.width, img.height);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // --- Image Resizing Helper ---
+        function resizeImageToBlob(size) {
+            return new Promise((resolve) => {
+                const targetSize = Math.round(size);
+                canvas.width = targetSize;
+                canvas.height = targetSize;
+
+                // High quality image smoothing
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                ctx.clearRect(0, 0, targetSize, targetSize);
+                ctx.drawImage(loadedImage, 0, 0, targetSize, targetSize);
+
+                canvas.toBlob((blob) => resolve(blob), 'image/png');
+            });
+        }
+
+        // --- Main ZIP Generation ---
+        btnGenerate.addEventListener('click', async () => {
+            if (!loadedImage) return;
+
+            const t = translations[currentLang];
+            btnGenerate.disabled = true;
+            statusMsg.innerText = t.processing;
+
+            const zip = new JSZip();
+
+            const isFlutter = document.getElementById('chkFlutter').checked;
+            const isAndroid = document.getElementById('chkAndroid').checked;
+            const isIOS = document.getElementById('chkIOS').checked;
+            const isWeb = document.getElementById('chkWeb').checked;
+            const isDesktop = document.getElementById('chkDesktop').checked;
+
+            try {
+                // 1. Android Processing
+                if (isAndroid || isFlutter) {
+                    const basePath = isFlutter ? 'flutter/android/app/src/main/res/' : 'android/res/';
+                    for (const item of ANDROID_SIZES) {
+                        const blob = await resizeImageToBlob(item.size);
+                        if (item.folder === 'playstore') {
+                            zip.file(`${isFlutter ? 'flutter/' : 'android/'}${item.name}`, blob);
+                        } else {
+                            zip.file(`${basePath}${item.folder}/${item.name}`, blob);
+                        }
+                    }
+                }
+
+                // 2. iOS Processing
+                if (isIOS || isFlutter) {
+                    const basePath = isFlutter 
+                        ? 'flutter/ios/Runner/Assets.xcassets/AppIcon.appiconset/' 
+                        : 'ios/Assets.xcassets/AppIcon.appiconset/';
+                    
+                    const contentsJson = {
+                        images: [],
+                        info: { version: 1, author: "IconResizerPro" }
+                    };
+
+                    for (const item of IOS_SIZES) {
+                        const pixelSize = item.size * item.scale;
+                        const blob = await resizeImageToBlob(pixelSize);
+                        zip.file(`${basePath}${item.filename}`, blob);
+
+                        contentsJson.images.push({
+                            size: `${item.size}x${item.size}`,
+                            idiom: item.idiom,
+                            filename: item.filename,
+                            scale: `${item.scale}x`
+                        });
+                    }
+
+                    zip.file(`${basePath}Contents.json`, JSON.stringify(contentsJson, null, 2));
+                }
+
+                // 3. Web & PWA
+                if (isWeb || isFlutter) {
+                    const basePath = isFlutter ? 'flutter/web/icons/' : 'web/';
+                    for (const item of WEB_SIZES) {
+                        const blob = await resizeImageToBlob(item.size);
+                        zip.file(`${basePath}${item.name}`, blob);
+                    }
+
+                    // Manifest sample file
+                    const manifestContent = {
+                        name: "App Name",
+                        short_name: "App",
+                        icons: [
+                            { src: "android-chrome-192x192.png", sizes: "192x192", type: "image/png" },
+                            { src: "android-chrome-512x512.png", sizes: "512x512", type: "image/png" }
+                        ],
+                        theme_color: "#ffffff",
+                        background_color: "#ffffff",
+                        display: "standalone"
+                    };
+                    zip.file(`${basePath}site.webmanifest`, JSON.stringify(manifestContent, null, 2));
+                }
+
+                // 4. Desktop (macOS & Windows)
+                if (isDesktop) {
+                    for (const item of DESKTOP_SIZES) {
+                        const blob = await resizeImageToBlob(item.size);
+                        zip.file(`desktop/${item.name}`, blob);
+                    }
+                }
+
+                // Finalize Zip
+                statusMsg.innerText = t.zipping;
+                const zipContent = await zip.generateAsync({ type: 'blob' });
+
+                // Trigger Download
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(zipContent);
+                link.download = 'app-icons-bundle.zip';
+                link.click();
+
+                statusMsg.innerText = t.success;
+            } catch (err) {
+                console.error(err);
+                statusMsg.innerText = t.error;
+            } finally {
+                btnGenerate.disabled = false;
+            }
+        });
+
+        // Initialize Default Language
+        setLanguage('en');
+    </script>
+</body>
+</html>
