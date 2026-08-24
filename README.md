@@ -8,10 +8,15 @@
 > **Icon Resizer Pro** is an ultra-fast, client-side web application built with a modern **iOS 18 Liquid Glass (Glassmorphism)** UI design. It allows mobile app developers, web creators, and UI/UX designers to convert a single master icon into all standard icon assets for **Flutter, Android Native, iOS (Xcode), Web/PWA, macOS, and Windows** with a single click.
 
 ---
+<p align="center">
+  <img src="assets/pr.jpeg" alt="Icon Resizer Preview" width="800"/>
+</p>
+
+
 
 ## ✨ Features
 
-- **🎨 Modern iOS Liquid Glass UI**: Designed with glassmorphism effects, dynamic glow animations, crisp blur backdrops, and responsive controls.
+- **🎨 Modern UI**: Designed with glassmorphism effects, dynamic glow animations, crisp blur backdrops, and responsive controls.
 - **🌐 Multi-Language Support (i18n)**: Instant, real-time language switching between **English (LTR)** and **Persian / فارسی (RTL)**.
 - **⚡ 100% Client-Side & Private**: All image processing and Canvas operations happen directly inside your browser. No images are uploaded to external servers.
 - **📁 Automated ZIP Directory Structuring**:
@@ -33,12 +38,8 @@
 
 ---
 
-## 🚀 Live Demo & Quick Start
+## ☕ Support / Donate
 
-Because **Icon Resizer Pro** is built as a single-page standalone web tool, no complex build process or server installation is required.
-
-### Quick Start (Local Setup)
-
-1. **Clone the repository**:
-   ```bash
-   git clone [https://github.com/your-username/icon-resizer-pro.git](https://github.com/your-username/icon-resizer-pro.git)
+<p align="center">
+  <img src="assets/ByMeCoffee.jpg" alt="ByMeCoffee Preview" width="800"/>
+</p>
