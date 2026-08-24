@@ -5,7 +5,7 @@
 [![Pure JavaScript](https://img.shields.io/badge/JavaScript-ES6+-yellow.svg)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![Client-Side Processing](https://img.shields.io/badge/Privacy-100%25%20Client--Side-orange.svg)](#-privacy--security)
 
-> **Icon Resizer Pro** is an ultra-fast, client-side web application built with a modern **iOS 18 Liquid Glass (Glassmorphism)** UI design. It allows mobile app developers, web creators, and UI/UX designers to convert a single master icon into all standard icon assets for **Flutter, Android Native, iOS (Xcode), Web/PWA, macOS, and Windows** with a single click.
+> **Icon Resizer Pro** is an ultra-fast, client-side web application built with a modern ** UI design. It allows mobile app developers, web creators, and UI/UX designers to convert a single master icon into all standard icon assets for **Flutter, Android Native, iOS (Xcode), Web/PWA, macOS, and Windows** with a single click.
 
 ---
 <p align="center">
@@ -17,7 +17,6 @@
 ## ✨ Features
 
 - **🎨 Modern UI**: Designed with glassmorphism effects, dynamic glow animations, crisp blur backdrops, and responsive controls.
-- **🌐 Multi-Language Support (i18n)**: Instant, real-time language switching between **English (LTR)** and **Persian / فارسی (RTL)**.
 - **⚡ 100% Client-Side & Private**: All image processing and Canvas operations happen directly inside your browser. No images are uploaded to external servers.
 - **📁 Automated ZIP Directory Structuring**:
   - **Flutter**: Ready-to-use directory paths (`android/app/src/main/res/`, `ios/Runner/Assets.xcassets/`, `web/icons/`).
